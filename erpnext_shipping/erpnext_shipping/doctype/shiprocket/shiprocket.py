@@ -254,7 +254,7 @@ class ShiprocketUtils():
 			"shipping_is_billing": True,
 			"order_items": order_items,
 			"payment_method": "Prepaid" if not cod else "COD",
-			"sub_total": sum(item["selling_price"] for item in order_items),
+			"sub_total": sum(item["selling_price"]*item["units"] for item in order_items),
 			"length": float(parcel_list.length),
 			"breadth": float(parcel_list.width),
 			"height": float(parcel_list.height),
@@ -267,13 +267,13 @@ class ShiprocketUtils():
 		for dn in list(set(eval(delivery_notes))):
 			delivery_note = frappe.get_doc("Delivery Note", dn)
 			for item in delivery_note.items:
-				tax_amount = get_item_tax_amount_from_delivery_note(item.item_code, delivery_note)
+				tax_rate = get_item_tax_amount_from_delivery_note(item.item_code, delivery_note)
 				order_item = {
 					"name": item.item_name,
 					"sku": item.item_code[:50],
 					"units": int(item.qty),
-					"selling_price": int(item.rate + tax_amount),
-					"tax": tax_amount,
+					"selling_price": int(item.rate*(1+tax_rate/100)),
+					"tax": tax_rate,
 					"hsn": int(item.gst_hsn_code) if item.gst_hsn_code else ""
 				}
 				order_items.append(order_item)
@@ -317,7 +317,7 @@ class ShiprocketUtils():
 			show_error_alert("getting pickup location")
 
 def get_item_tax_amount_from_delivery_note(item, delivery_note):
-	tax_amount = 0.0
+	tax_rate = 0.0
 	if delivery_note.total_taxes_and_charges:
 		for tax in delivery_note.taxes:
 			if getattr(tax, "category", None) and tax.category=="Valuation":
@@ -328,7 +328,7 @@ def get_item_tax_amount_from_delivery_note(item, delivery_note):
 				for item_code, tax_data in item_tax_map.items():
 					if item_code == item:
 						if isinstance(tax_data, list):
-							tax_amount += flt(tax_data[1])
-	return int(tax_amount)
+							tax_rate += flt(tax_data[0])
+	return int(tax_rate)
 
 
