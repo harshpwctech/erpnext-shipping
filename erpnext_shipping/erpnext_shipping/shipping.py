@@ -12,16 +12,18 @@ from erpnext_shipping.erpnext_shipping.utils import get_address, get_contact, ma
 from erpnext_shipping.erpnext_shipping.doctype.letmeship.letmeship import LETMESHIP_PROVIDER, LetMeShipUtils
 from erpnext_shipping.erpnext_shipping.doctype.packlink.packlink import PACKLINK_PROVIDER, PackLinkUtils
 from erpnext_shipping.erpnext_shipping.doctype.sendcloud.sendcloud import SENDCLOUD_PROVIDER, SendCloudUtils
+from erpnext_shipping.erpnext_shipping.doctype.shiprocket.shiprocket import SHIPROCKET_PROVIDER, ShiprocketUtils
 
 @frappe.whitelist()
 def fetch_shipping_rates(pickup_from_type, delivery_to_type, pickup_address_name, delivery_address_name,
 	shipment_parcel, description_of_content, pickup_date, value_of_goods,
-	pickup_contact_name=None, delivery_contact_name=None):
+	pickup_contact_name=None, delivery_contact_name=None, cod=False):
 	# Return Shipping Rates for the various Shipping Providers
 	shipment_prices = []
 	letmeship_enabled = frappe.db.get_single_value('LetMeShip','enabled')
 	packlink_enabled = frappe.db.get_single_value('Packlink','enabled')
 	sendcloud_enabled = frappe.db.get_single_value('SendCloud','enabled')
+	shiprocket_enabled = frappe.db.get_single_value('Shiprocket','enabled')
 	pickup_address = get_address(pickup_address_name)
 	delivery_address = get_address(delivery_address_name)
 
@@ -71,6 +73,19 @@ def fetch_shipping_rates(pickup_from_type, delivery_to_type, pickup_address_name
 			shipment_parcel=shipment_parcel
 		) or []
 		shipment_prices = shipment_prices + sendcloud_prices[:4] # remove after fixing scroll issue
+	if shiprocket_enabled:
+		shipment_parcel = json.loads(shipment_parcel)
+		weight = 0
+		for parcel in shipment_parcel:
+			weight += parcel.get('weight')
+		shiprocket = ShiprocketUtils()
+		shiprocket_prices = shiprocket.get_available_services(
+			pickup_pincode=pickup_address.pincode,
+			delivery_pincode=delivery_address.pincode,
+			weight = weight,
+			cod=cod
+		)
+		shipment_prices = shipment_prices + shiprocket_prices
 	shipment_prices = sorted(shipment_prices, key=lambda k:k['total_price'])
 	return shipment_prices
 
@@ -134,6 +149,18 @@ def create_shipment(shipment, pickup_from_type, delivery_to_type, pickup_address
 			delivery_contact=delivery_contact,
 			service_info=service_info,
 		)
+	
+	if service_info['service_provider'] == SHIPROCKET_PROVIDER:
+		shiprocket = ShiprocketUtils()
+		shipment_info = shiprocket.create_shipment(
+			shipment=shipment,
+			pickup_address=pickup_address,
+			delivery_address=delivery_address,
+			shipment_parcel=shipment_parcel,
+			service_info=service_info,
+			delivery_notes=delivery_notes,
+			delivery_contact=delivery_contact	
+		)
 
 	if shipment_info:
 		fields = ['service_provider', 'carrier', 'carrier_service', 'shipment_id', 'shipment_amount', 'awb_number']
@@ -157,6 +184,9 @@ def print_shipping_label(service_provider, shipment_id):
 	elif service_provider == SENDCLOUD_PROVIDER:
 		sendcloud = SendCloudUtils()
 		shipping_label = sendcloud.get_label(shipment_id)
+	elif service_provider == SHIPROCKET_PROVIDER:
+		shiprocket = ShiprocketUtils()
+		shipping_label = shiprocket.get_label(shipment_id)
 	return shipping_label
 
 @frappe.whitelist()
@@ -172,6 +202,9 @@ def update_tracking(shipment, service_provider, shipment_id, delivery_notes=[]):
 	elif service_provider == SENDCLOUD_PROVIDER:
 		sendcloud = SendCloudUtils()
 		tracking_data = sendcloud.get_tracking_data(shipment_id)
+	elif service_provider == SHIPROCKET_PROVIDER:
+		shiprocket = ShiprocketUtils()
+		tracking_data = shiprocket.get_tracking_data(shipment_id)
 
 	if tracking_data:
 		fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url']

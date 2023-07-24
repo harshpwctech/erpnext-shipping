@@ -1,4 +1,6 @@
-{% if (data.preferred_services.length || data.other_services.length) { %}
+(() => {
+  // frappe-html:/home/safeuser/frappe-bench/apps/erpnext_shipping/erpnext_shipping/public/js/shipment_service_selector.html
+  frappe.templates["shipment_service_selector"] = `{% if (data.preferred_services.length || data.other_services.length) { %}
 	<div style="overflow-x:scroll;">
 		<h5>{{ __("Preferred Services") }}</h5>
 		{% if (data.preferred_services.length) { %}
@@ -51,7 +53,7 @@
 							<td class="service-info" style="width:20%;">{{ data.other_services[i].service_provider }}</td>
 							<td class="service-info" style="width:20%;">{{ data.other_services[i].carrier }}</td>
 							<td class="service-info" style="width:40%;">{{ data.other_services[i].service_name }}</td>
-							<td class="service-info" style="width:20%;">{{ format_currency(data.other_services[i].total_price, "INR", 2) }}</td>
+							<td class="service-info" style="width:20%;">{{ format_currency(data.other_services[i].total_price, "EUR", 2) }}</td>
 							<td style="width:10%;vertical-align: middle;">
 								<button
 									data-type="other_services"
@@ -93,4 +95,6 @@
 .ship {
 	font-size: 16px;
 }
-</style>
+</style>`;
+})();
+//# sourceMappingURL=erpnext_shipment_service_selector.bundle.Y5A77NZC.js.map

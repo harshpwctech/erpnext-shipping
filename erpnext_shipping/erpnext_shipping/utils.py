@@ -14,7 +14,7 @@ def get_tracking_url(carrier, tracking_number):
 	return tracking_url
 
 def get_address(address_name):
-	fields = ['address_title', 'address_line1', 'address_line2', 'city', 'pincode', 'country']
+	fields = ['address_title', 'address_line1', 'address_line2', 'city', 'pincode', 'state', 'country']
 	address = frappe.db.get_value('Address', address_name, fields, as_dict=1)
 	address.country_code = frappe.db.get_value('Country', address.country, 'code').upper()
 
@@ -30,8 +30,8 @@ def get_contact(contact_name):
 	fields = ['first_name', 'last_name', 'email_id', 'phone', 'mobile_no', 'gender']
 	contact = frappe.db.get_value('Contact', contact_name, fields, as_dict=1)
 
-	if not contact.last_name:
-		frappe.throw(_("Last Name is mandatory to continue. </br> \
+	if not contact.first_name:
+		frappe.throw(_("Name is mandatory to continue. </br> \
 				Please set Last Name for Contact <a href='#Form/Contact/{0}'>{1}</a>"
 			).format(contact_name, contact_name))
 	if not contact.phone:
@@ -56,6 +56,7 @@ def show_error_alert(action):
 def update_tracking_info_daily():
 	# Daily scheduled event to update Tracking info for not delivered Shipments
 	# Also Updates the related Delivery Notes
+	from erpnext_shipping.erpnext_shipping.shipping import update_tracking
 	shipments = frappe.get_all('Shipment', filters={
 		'docstatus': 1,
 		'status': 'Booked',
@@ -64,7 +65,7 @@ def update_tracking_info_daily():
 	})
 	for shipment in shipments:
 		shipment_doc = frappe.get_doc('Shipment', shipment.name)
-		tracking_info = update_tracking(shipment_doc.service_provider, shipment_doc.shipment_id,
+		tracking_info = update_tracking(shipment_doc.name, shipment_doc.service_provider, shipment_doc.shipment_id,
 				shipment_doc.shipment_delivery_notes)
 
 		if tracking_info:

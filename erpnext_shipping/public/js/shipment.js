@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('Shipment', {
 	refresh: function(frm) {
-		if (frm.doc.docstatus === 1 && !frm.doc.shipment_id) {
+		if (frm.doc.docstatus === 0 && !frm.doc.shipment_id) {
 			frm.add_custom_button(__('Fetch Shipping Rates'), function() {
 				return frm.events.fetch_shipping_rates(frm);
 			});
@@ -131,7 +131,7 @@ function select_from_available_services(frm, available_services) {
 	}, { preferred_services: [], other_services: [] });
 
 	frm.render_available_services = function(dialog, headers, arranged_services){
-		frappe.require("assets/js/shipment.min.js", function() {
+		frappe.require("erpnext_shipment_service_selector.bundle.js", function() {
 			dialog.fields_dict.available_services.$wrapper.html(
 				frappe.render_template('shipment_service_selector',
 					{'header_columns': headers, 'data': arranged_services}
