@@ -62,7 +62,7 @@ doctype_js = {
 
 # before_install = "erpnext_shipping.install.before_install"
 # after_install = "erpnext_shipping.install.after_install"
-after_migrate = "erpnext_shipping.erpnext_shipping.patches.create_custom_delivery_note_fields"
+after_migrate = "erpnext_shipping.erpnext_shipping.patches.create_custom_delivery_note_fields.execute"
 
 # Desk Notifications
 # ------------------

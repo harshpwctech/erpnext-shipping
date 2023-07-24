@@ -291,10 +291,10 @@ class ShiprocketUtils():
 				url=get_pickup_address_url,
 				headers=headers
 			)
-			if not any(pickup_location["pickup_location"] == pickup_address.address_title for pickup_location in response_data["data"]["shipping_address"]):
+			if not any(pickup_location["pickup_location"] == pickup_address.name for pickup_location in response_data["data"]["shipping_address"]):
 				add_pickup_address_url = self.base_url+"settings/company/addpickup"
 				add_pickup_address_payload= {
-					"pickup_location": pickup_address.address_title,
+					"pickup_location": pickup_address.name,
 					"name": response_data["data"]["shipping_address"][0]["name"],
 					"email": response_data["data"]["shipping_address"][0]["email"],
 					"phone": response_data["data"]["shipping_address"][0]["phone"],
