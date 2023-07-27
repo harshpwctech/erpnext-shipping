@@ -133,7 +133,7 @@ function select_from_available_services(frm, available_services) {
 	frm.render_available_services = function(dialog, headers, arranged_services){
 		frappe.require("erpnext_shipment_service_selector.bundle.js", function() {
 			dialog.fields_dict.available_services.$wrapper.html(
-				frappe.render_template('shipment_service_selector',
+				frappe.render_template('erpnext_shipment_service_selector',
 					{'header_columns': headers, 'data': arranged_services}
 				)
 			);

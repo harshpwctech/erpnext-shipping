@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-07-26 19:32:02.391557",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "shipment",
+  "awb_number",
+  "shipment_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "shipment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Shipment",
+   "options": "Shipment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "awb_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "AWB Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "shipment_id",
+   "fieldtype": "Data",
+   "label": "Shipment ID"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2023-07-27 15:23:32.951446",
+ "modified_by": "Administrator",
+ "module": "ERPNext Shipping",
+ "name": "Shipping Manifest Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

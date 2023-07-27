@@ -214,6 +214,14 @@ def update_tracking(shipment, service_provider, shipment_id, delivery_notes=[]):
 		if delivery_notes:
 			update_delivery_note(delivery_notes=delivery_notes, tracking_info=tracking_data)
 
+@frappe.whitelist()
+def get_shipment_details(service_provider, shipment_id):
+	if service_provider == SHIPROCKET_PROVIDER:
+		shiprocket = ShiprocketUtils()
+		shipment_details = shiprocket.get_shipment_details(shipment_id)
+
+	return shipment_details
+
 def update_delivery_note(delivery_notes, shipment_info=None, tracking_info=None):
 	# Update Shipment Info in Delivery Note
 	# Using db_set since some services might not exist

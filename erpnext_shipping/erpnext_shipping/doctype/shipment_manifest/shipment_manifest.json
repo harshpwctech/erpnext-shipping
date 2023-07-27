@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-07-26 19:34:09.621461",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "service_provider",
+  "pickup_id",
+  "shipments_manifested_section",
+  "scan_barcode",
+  "manifest_items",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "service_provider",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Service Provider",
+   "options": "Shiprocket",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scan_barcode",
+   "fieldtype": "Data",
+   "label": "Scan AWB Code",
+   "options": "Barcode"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Shipment Manifest",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "manifest_items",
+   "fieldtype": "Table",
+   "label": "Manifest Items",
+   "options": "Shipping Manifest Item"
+  },
+  {
+   "fieldname": "shipments_manifested_section",
+   "fieldtype": "Section Break",
+   "label": "Shipments Manifested"
+  },
+  {
+   "fieldname": "pickup_id",
+   "fieldtype": "Data",
+   "label": "Pickup ID",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-07-27 15:23:00.821677",
+ "modified_by": "Administrator",
+ "module": "ERPNext Shipping",
+ "name": "Shipment Manifest",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
