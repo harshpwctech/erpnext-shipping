@@ -1,4 +1,4 @@
-(()=>{frappe.templates.shipment_service_selector=`{% if (data.preferred_services.length || data.other_services.length) { %}
+(()=>{frappe.templates.erpnext_shipment_service_selector=`{% if (data.preferred_services.length || data.other_services.length) { %}
 	<div style="overflow-x:scroll;">
 		<h5>{{ __("Preferred Services") }}</h5>
 		{% if (data.preferred_services.length) { %}
@@ -94,8 +94,4 @@
 	font-size: 16px;
 }
 </style>`;})();
-<<<<<<< HEAD:erpnext_shipping/public/dist/js/erpnext_shipment_service_selector.bundle.3Q7NQBPN.js
-//# sourceMappingURL=erpnext_shipment_service_selector.bundle.3Q7NQBPN.js.map
-=======
-//# sourceMappingURL=erpnext_shipment_service_selector.bundle.PMSJDQ57.js.map
->>>>>>> 2655e2dd6225e2433bd1b75504990f9456a83ae5:erpnext_shipping/public/dist/js/erpnext_shipment_service_selector.bundle.PMSJDQ57.js
+//# sourceMappingURL=erpnext_shipment_service_selector.bundle.RBZ3V5MT.js.map

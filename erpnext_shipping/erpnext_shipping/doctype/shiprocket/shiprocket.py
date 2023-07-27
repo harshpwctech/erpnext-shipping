@@ -176,8 +176,30 @@ class ShiprocketUtils():
 					.format(response_data['message']))
 		except Exception:
 			show_error_alert("generating Shiprocket lable")
-
 	
+	def get_manifest(self, shipment_ids):
+		url = self.base_url+"manifests/generate"
+		headers = {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer {0}".format(self.token)
+		}
+		payload = {
+			"shipment_id": shipment_ids
+		}
+		try:
+			response_data = make_post_request(
+				url=url,
+				headers=headers,
+				data=json.dumps(payload)
+			)
+			if 'manifest_url' in response_data:
+				return response_data["manifest_url"]
+			elif 'message' in response_data:
+				frappe.throw(_('An Error occurred while generating manifest: {0}')
+					.format(response_data['message']))
+		except Exception:
+			show_error_alert("generating Shiprocket manifest")
+
 	def get_tracking_data(self, shipment_id):
 		url = self.base_url+"courier/track/shipment/{0}".format(shipment_id)
 		headers = {
@@ -212,6 +234,26 @@ class ShiprocketUtils():
 		except Exception:
 			show_error_alert("track shipment")
 	
+	def get_shipment_details(self, shipment_id):
+		shipment_details_url = self.base_url+"shipments/{0}".format(shipment_id)
+		headers = {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer {0}".format(self.token)
+		}
+		try:
+			response_data = make_get_request(
+				url=shipment_details_url,
+				headers=headers
+			)
+			order_id = response_data["data"]["order_id"]
+			order_details_url = self.base_url+"orders/show/{0}".format(order_id)
+			return make_get_request(
+				url=order_details_url,
+				headers=headers
+			)
+		except Exception:
+			show_error_alert("get shipment details")
+
 	def get_service_dict(self, response):
 		"""Returns a dictionary with service info."""
 		available_service = frappe._dict()

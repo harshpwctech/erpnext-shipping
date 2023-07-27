@@ -1,1 +1,1 @@
-import './shipment_service_selector.html';
+import './erpnext_shipment_service_selector.html';
