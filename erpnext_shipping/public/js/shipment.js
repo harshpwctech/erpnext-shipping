@@ -8,7 +8,7 @@ frappe.ui.form.on('Shipment', {
 				return frm.events.fetch_shipping_rates(frm);
 			});
 		}
-		if (frm.doc.shipment_id) {
+		if (frm.doc.shipment_id && frm.doc.service_provider != "Dunzo") {
 			frm.add_custom_button(__('Print Shipping Label'), function() {
 				return frm.events.print_shipping_label(frm);
 			}, __('Tools'));
@@ -37,6 +37,7 @@ frappe.ui.form.on('Shipment', {
 				freeze: true,
 				freeze_message: __("Fetching Shipping Rates"),
 				args: {
+					shipment_doc: frm.doc.name,
 					pickup_from_type: frm.doc.pickup_from_type,
 					delivery_to_type: frm.doc.delivery_to_type,
 					pickup_address_name: frm.doc.pickup_address_name,
