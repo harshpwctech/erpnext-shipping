@@ -13,9 +13,10 @@ from erpnext_shipping.erpnext_shipping.doctype.letmeship.letmeship import LETMES
 from erpnext_shipping.erpnext_shipping.doctype.packlink.packlink import PACKLINK_PROVIDER, PackLinkUtils
 from erpnext_shipping.erpnext_shipping.doctype.sendcloud.sendcloud import SENDCLOUD_PROVIDER, SendCloudUtils
 from erpnext_shipping.erpnext_shipping.doctype.shiprocket.shiprocket import SHIPROCKET_PROVIDER, ShiprocketUtils
+from erpnext_shipping.erpnext_shipping.doctype.dunzo.dunzo import DUNZO_PROVIDER, DunzoUtils
 
 @frappe.whitelist()
-def fetch_shipping_rates(pickup_from_type, delivery_to_type, pickup_address_name, delivery_address_name,
+def fetch_shipping_rates(shipment_doc, pickup_from_type, delivery_to_type, pickup_address_name, delivery_address_name,
 	shipment_parcel, description_of_content, pickup_date, value_of_goods,
 	pickup_contact_name=None, delivery_contact_name=None, cod=False):
 	# Return Shipping Rates for the various Shipping Providers
@@ -24,6 +25,7 @@ def fetch_shipping_rates(pickup_from_type, delivery_to_type, pickup_address_name
 	packlink_enabled = frappe.db.get_single_value('Packlink','enabled')
 	sendcloud_enabled = frappe.db.get_single_value('SendCloud','enabled')
 	shiprocket_enabled = frappe.db.get_single_value('Shiprocket','enabled')
+	dunzo_enabled = frappe.db.get_single_value('Dunzo','enabled')
 	pickup_address = get_address(pickup_address_name)
 	delivery_address = get_address(delivery_address_name)
 
@@ -86,6 +88,16 @@ def fetch_shipping_rates(pickup_from_type, delivery_to_type, pickup_address_name
 			cod=cod
 		)
 		shipment_prices = shipment_prices + shiprocket_prices
+	if dunzo_enabled:
+		shipment = frappe.get_doc("Shipment", shipment_doc)
+		dunzo = DunzoUtils()
+		dunzo_prices = dunzo.get_available_services(
+			pickup_address_gps=shipment.pickup_address_gps,
+			delivery_address_gps=shipment.delivery_address_gps,
+			cod=cod,
+			collection_amount=shipment.collection_amount
+		)
+		shipment_prices = shipment_prices + dunzo_prices
 	shipment_prices = sorted(shipment_prices, key=lambda k:k['total_price'])
 	return shipment_prices
 
@@ -161,6 +173,16 @@ def create_shipment(shipment, pickup_from_type, delivery_to_type, pickup_address
 			delivery_notes=delivery_notes,
 			delivery_contact=delivery_contact	
 		)
+	
+	if service_info['service_provider'] == DUNZO_PROVIDER:
+		dunzo = DunzoUtils()
+		shipment_info = dunzo.create_shipment(
+			shipment=shipment,
+			pickup_address=pickup_address,
+			delivery_address=delivery_address,
+			delivery_contact=delivery_contact,
+			pickup_contact=pickup_contact	
+		)
 
 	if shipment_info:
 		fields = ['service_provider', 'carrier', 'carrier_service', 'shipment_id', 'shipment_amount', 'awb_number']
@@ -175,6 +197,7 @@ def create_shipment(shipment, pickup_from_type, delivery_to_type, pickup_address
 
 @frappe.whitelist()
 def print_shipping_label(service_provider, shipment_id):
+	shipping_label = None
 	if service_provider == LETMESHIP_PROVIDER:
 		letmeship = LetMeShipUtils()
 		shipping_label = letmeship.get_label(shipment_id)
@@ -205,6 +228,9 @@ def update_tracking(shipment, service_provider, shipment_id, delivery_notes=[]):
 	elif service_provider == SHIPROCKET_PROVIDER:
 		shiprocket = ShiprocketUtils()
 		tracking_data = shiprocket.get_tracking_data(shipment_id)
+	elif service_provider == DUNZO_PROVIDER:
+		dunzo = DunzoUtils()
+		tracking_data = dunzo.get_tracking_data(shipment_id)
 
 	if tracking_data:
 		fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url']
@@ -213,6 +239,8 @@ def update_tracking(shipment, service_provider, shipment_id, delivery_notes=[]):
 
 		if delivery_notes:
 			update_delivery_note(delivery_notes=delivery_notes, tracking_info=tracking_data)
+	
+	return tracking_data
 
 @frappe.whitelist()
 def get_shipment_details(service_provider, shipment_id):

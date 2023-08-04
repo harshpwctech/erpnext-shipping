@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 from __future__ import unicode_literals
 import frappe
+import json
 from frappe import _
 
 def get_tracking_url(carrier, tracking_number):
@@ -52,6 +53,12 @@ def show_error_alert(action):
 	log = frappe.log_error(frappe.get_traceback())
 	link_to_log = frappe.utils.get_link_to_form("Error Log", log.name, "See what happened.")
 	frappe.msgprint(_('An Error occurred while {0}. {1}').format(action, link_to_log), indicator='orange', alert=True)
+
+def get_lat_long(gps_object):
+	gps_object =json.loads(gps_object)
+	for feature in gps_object["features"]:
+		if feature["geometry"]["type"] == "Point":
+			return str(feature["geometry"]["coordinates"][1]), str(feature["geometry"]["coordinates"][0])
 
 def update_tracking_info_daily():
 	# Daily scheduled event to update Tracking info for not delivered Shipments

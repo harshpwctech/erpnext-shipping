@@ -1,4 +1,6 @@
-(()=>{frappe.templates.erpnext_shipment_service_selector=`{% if (data.preferred_services.length || data.other_services.length) { %}
+(() => {
+  // frappe-html:/Users/harsh/frappe-bench/apps/erpnext_shipping/erpnext_shipping/public/js/erpnext_shipment_service_selector.html
+  frappe.templates["erpnext_shipment_service_selector"] = `{% if (data.preferred_services.length || data.other_services.length) { %}
 	<div style="overflow-x:scroll;">
 		<h5>{{ __("Preferred Services") }}</h5>
 		{% if (data.preferred_services.length) { %}
@@ -93,5 +95,6 @@
 .ship {
 	font-size: 16px;
 }
-</style>`;})();
-//# sourceMappingURL=erpnext_shipment_service_selector.bundle.RBZ3V5MT.js.map
+</style>`;
+})();
+//# sourceMappingURL=erpnext_shipment_service_selector.bundle.UEOR37NM.js.map
