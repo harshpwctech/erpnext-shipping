@@ -218,10 +218,10 @@ class ShiprocketUtils():
 				pickup_at = None
 				delivered_at = None
 				for s in response_data["tracking_data"]["shipment_track_activities"]:
-					if s["status"] == "DLVD":
-						delivered_at = get_datetime(s["date"])
-					elif s["status"] == "PUD":
+					if s["sr-status"] == 42:
 						pickup_at = get_datetime(s["date"])
+				if tracking_status == "Delivered":
+					delivered_at = get_datetime(response_data["tracking_data"]["shipment_track"][0]["delivered_date"])
 				return {
 					'awb_number': response_data["tracking_data"]["shipment_track"][0]["awb_code"],
 					'tracking_status': tracking_status,
