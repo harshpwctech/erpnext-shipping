@@ -218,7 +218,7 @@ class ShiprocketUtils():
 				pickup_at = None
 				delivered_at = None
 				for s in response_data["tracking_data"]["shipment_track_activities"]:
-					if s["sr-status"] == 42:
+					if s["sr-status"] == "42":
 						pickup_at = get_datetime(s["date"])
 				if tracking_status == "Delivered":
 					delivered_at = get_datetime(response_data["tracking_data"]["shipment_track"][0]["delivered_date"])
