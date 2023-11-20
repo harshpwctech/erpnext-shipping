@@ -79,7 +79,7 @@ function validatePickupId(frm, shipment_id) {
 	return new Promise((resolve, reject) => {
 		if (frm.doc.service_provider === "Shiprocket") {
 			frappe.call({
-				method: 'erpnext_shipping.erpnext_shipping.shipping.get_shipment_details', // Replace 'my_custom_app.api.get_pickup_id' with the actual API method
+				method: 'erpnext_shipping.erpnext_shipping.shipping.get_shipment_details',
 				args: {
 					shipment_id: shipment_id,
 					service_provider: frm.doc.service_provider

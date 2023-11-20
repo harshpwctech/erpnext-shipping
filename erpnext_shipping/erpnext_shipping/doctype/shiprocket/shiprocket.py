@@ -221,6 +221,7 @@ class ShiprocketUtils():
 					status = str(s["sr-status"])
 					if status == "42":
 						pickup_at = get_datetime(s["date"])
+						break
 				if tracking_status == "Delivered":
 					delivered_at = get_datetime(response_data["tracking_data"]["shipment_track"][0]["delivered_date"])
 				return {
@@ -303,6 +304,10 @@ class ShiprocketUtils():
 			"height": float(parcel_list.height),
 			"weight": float(parcel_list.weight)
 		}
+		invoice_number = get_invoice_number(delivery_notes)
+		if invoice_number:
+			payload["invoice_number"] = invoice_number
+		
 		return payload
 	
 	def get_order_items(self, delivery_notes):
@@ -359,6 +364,13 @@ class ShiprocketUtils():
 		except Exception:
 			show_error_alert("getting pickup location")
 
+def get_invoice_number(delivery_notes):
+	for dn in list(set(eval(delivery_notes))):
+		si = frappe.db.get_value("Sales Invoice Item", filters={"delivery_note": dn, "docstatus": 1}, fieldname="parent", for_update=True)
+		if si:
+			return si
+	return None
+			
 def get_item_tax_amount_from_delivery_note(item, delivery_note):
 	tax_rate = 0.0
 	if delivery_note.total_taxes_and_charges:
