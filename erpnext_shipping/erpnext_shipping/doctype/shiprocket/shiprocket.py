@@ -355,12 +355,12 @@ class ShiprocketUtils():
 				}
 				add_pickup_address_response = make_post_request(add_pickup_address_url, headers=headers, data=json.dumps(add_pickup_address_payload))
 				if 'success' in add_pickup_address_response:
-					return pickup_address.address_title
+					return pickup_address.name[:36]
 				else:
 					frappe.throw(_('An Error occurred while adding pickup location: {0}')
 						.format(add_pickup_address_response['message']))
 			else:
-				return pickup_address.address_title
+				return pickup_address.name[:36]
 		except Exception:
 			show_error_alert("getting pickup location")
 
