@@ -98,7 +98,6 @@ class ShiprocketUtils():
 			return []
 
 		parcel_list = self.get_parcel_list(json.loads(shipment_parcel))
-		url = self.base_url+"orders/create/adhoc"
 		headers = {
 			"Content-Type": "application/json",
 			"Authorization": "Bearer {0}".format(self.token)
@@ -113,6 +112,10 @@ class ShiprocketUtils():
 			delivery_notes=delivery_notes,
 			cod=cod,
 			service_info=service_info)
+		if payload.get("channel_id"):
+			url = self.base_url+"orders/create"
+		else:
+			url = self.base_url+"orders/create/adhoc"
 		try:
 			response_data = make_post_request(
 				url=url,
@@ -304,6 +307,8 @@ class ShiprocketUtils():
 			"height": float(parcel_list.height),
 			"weight": float(parcel_list.weight)
 		}
+		if service_info.get("id", None):
+			payload["channel_id"] = service_info.get("id")
 		invoice_number = get_invoice_number(delivery_notes)
 		if invoice_number:
 			payload["invoice_number"] = invoice_number
