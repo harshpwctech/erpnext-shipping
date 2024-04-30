@@ -308,7 +308,7 @@ class ShiprocketUtils():
 			"weight": float(parcel_list.weight)
 		}
 		if service_info.get("id", None):
-			payload["channel_id"] = service_info.get("id")
+			payload["channel_id"] = str(service_info.get("id"))
 		invoice_number = get_invoice_number(delivery_notes)
 		if invoice_number:
 			payload["invoice_number"] = invoice_number
