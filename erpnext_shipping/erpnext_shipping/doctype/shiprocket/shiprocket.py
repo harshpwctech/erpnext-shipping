@@ -126,7 +126,6 @@ class ShiprocketUtils():
 					"shipment_id": response_data["shipment_id"]
 				}
 				if service_info.get("id", None):
-					
 					awb_payload["courier_id"] = str(service_info.get("id"))
 				awb_response = make_post_request(awb_url, headers=headers, data=json.dumps(awb_payload))
 				if 'awb_assign_status' in awb_response:
