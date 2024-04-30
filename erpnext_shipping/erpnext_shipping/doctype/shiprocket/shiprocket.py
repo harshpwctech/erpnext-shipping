@@ -262,7 +262,7 @@ class ShiprocketUtils():
 		"""Returns a dictionary with service info."""
 		available_service = frappe._dict()
 		available_service.service_provider = SHIPROCKET_PROVIDER
-		available_service.id = response['id']
+		available_service.id = response['courier_company_id']
 		available_service.carrier = response['courier_name']
 		available_service.carrier_name = response['courier_name']
 		available_service.service_name = SHIPROCKET_PROVIDER
