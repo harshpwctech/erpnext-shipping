@@ -112,10 +112,7 @@ class ShiprocketUtils():
 			delivery_notes=delivery_notes,
 			cod=cod,
 			service_info=service_info)
-		if payload.get("channel_id"):
-			url = self.base_url+"orders/create"
-		else:
-			url = self.base_url+"orders/create/adhoc"
+		url = self.base_url+"orders/create/adhoc"
 		try:
 			response_data = make_post_request(
 				url=url,
@@ -128,6 +125,8 @@ class ShiprocketUtils():
 				awb_payload= {
 					"shipment_id": response_data["shipment_id"]
 				}
+				if service_info.get("id", None):
+					awb_payload["courier_id"] = str(service_info.get("id"))
 				awb_response = make_post_request(awb_url, headers=headers, data=json.dumps(awb_payload))
 				if 'awb_assign_status' in awb_response:
 					if awb_response["awb_assign_status"] == 1:
@@ -307,8 +306,6 @@ class ShiprocketUtils():
 			"height": float(parcel_list.height),
 			"weight": float(parcel_list.weight)
 		}
-		if service_info.get("id", None):
-			payload["channel_id"] = str(service_info.get("id"))
 		invoice_number = get_invoice_number(delivery_notes)
 		if invoice_number:
 			payload["invoice_number"] = invoice_number
