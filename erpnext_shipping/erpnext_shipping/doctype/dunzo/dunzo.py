@@ -123,7 +123,7 @@ class DunzoUtils():
 		return []
 	
 	def create_shipment(self, shipment, pickup_address, delivery_address, delivery_contact=None, pickup_contact=None, cod=False):
-		shipment = frappe.get_doc("Shipment", shipment)
+		shipment = frappe.get_cached_doc("Shipment", shipment)
 		pickup_lat, pickup_long = get_lat_long(shipment.pickup_address_gps)
 		delivery_lat, delivery_long = get_lat_long(shipment.delivery_address_gps)
 		url = self.base_url+"api/v2/tasks"
