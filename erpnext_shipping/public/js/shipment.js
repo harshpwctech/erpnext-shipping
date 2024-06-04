@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('Shipment', {
 	refresh: function(frm) {
-		if (frm.doc.docstatus === 0 && !frm.doc.shipment_id) {
+		if (frm.doc.docstatus === 1 && !frm.doc.shipment_id) {
 			frm.add_custom_button(__('Fetch Shipping Rates'), function() {
 				return frm.events.fetch_shipping_rates(frm);
 			});
