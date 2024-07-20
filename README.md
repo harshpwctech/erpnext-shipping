@@ -4,11 +4,13 @@ A Shipping Integration for ERPNext with various platforms. Platforms integrated 
 - [Packlink](https://www.packlink.com/en-GB/)
 - [LetMeShip](https://www.letmeship.com/en/)
 - [SendCloud](https://www.sendcloud.com/home-new/)
+- Shiprocket
+- Dunzo
 
 ## Features
-- Creation of shipment to a carrier service (e.g. FedEx, UPS) via LetMeShip, Packlink, and SendCloud. 
+- Creation of shipment to a carrier service (e.g. FedEx, UPS, Bluedart, Delhivery, etc.) via LetMeShip, Packlink, SendCloud, Shiprocket and hyperlocal delivery (In India) via Dunzo. 
 - Compare shipping rates. 
-- Printing the shipping label is also made available within the Shipment doctype.
+- Printing the shipping label is also made available within the Shipment doctype (as available with the carrier service).
 - Templates for the parcel dimensions.
 - Shipment tracking.
 
