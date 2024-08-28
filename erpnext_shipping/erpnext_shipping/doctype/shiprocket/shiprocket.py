@@ -219,11 +219,12 @@ class ShiprocketUtils():
 					tracking_status = "Delivered"
 				pickup_at = None
 				delivered_at = None
-				for s in response_data["tracking_data"]["shipment_track_activities"]:
-					status = str(s["sr-status"])
-					if status == "42":
-						pickup_at = get_datetime(s["date"])
-						break
+				if len(response_data["tracking_data"].get("shipment_track_activities", [])):
+					for s in response_data["tracking_data"]["shipment_track_activities"]:
+						status = str(s["sr-status"])
+						if status == "42":
+							pickup_at = get_datetime(s["date"])
+							break
 				if tracking_status == "Delivered":
 					delivered_at = get_datetime(response_data["tracking_data"]["shipment_track"][0]["delivered_date"])
 				return {
