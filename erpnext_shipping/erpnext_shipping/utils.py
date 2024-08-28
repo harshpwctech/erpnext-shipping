@@ -72,11 +72,14 @@ def update_tracking_info_daily():
 	})
 	for shipment in shipments:
 		shipment_doc = frappe.get_doc('Shipment', shipment.name)
-		tracking_info = update_tracking(shipment_doc.name, shipment_doc.service_provider, shipment_doc.shipment_id,
-				shipment_doc.shipment_delivery_note)
+		try:
+			tracking_info = update_tracking(shipment_doc.name, shipment_doc.service_provider, shipment_doc.shipment_id,
+					shipment_doc.shipment_delivery_note)
 
-		if tracking_info:
-			fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url', 'delivered_at']
-			for field in fields:
-				shipment_doc.db_set(field, tracking_info.get(field, None))
-			frappe.db.commit()
+			if tracking_info:
+				fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url', 'delivered_at']
+				for field in fields:
+					shipment_doc.db_set(field, tracking_info.get(field, None))
+				frappe.db.commit()
+		except Exception:
+			continue
