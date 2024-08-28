@@ -233,7 +233,7 @@ def update_tracking(shipment, service_provider, shipment_id, delivery_notes=[]):
 		tracking_data = dunzo.get_tracking_data(shipment_id)
 
 	if tracking_data:
-		fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url']
+		fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url', 'delivered_at']
 		for field in fields:
 			frappe.db.set_value('Shipment', shipment, field, tracking_data.get(field))
 

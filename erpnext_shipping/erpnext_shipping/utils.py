@@ -79,3 +79,4 @@ def update_tracking_info_daily():
 			fields = ['awb_number', 'tracking_status', 'tracking_status_info', 'tracking_url', 'delivered_at']
 			for field in fields:
 				shipment_doc.db_set(field, tracking_info.get(field, None))
+			frappe.db.commit()
