@@ -219,7 +219,7 @@ class ShiprocketUtils():
 					tracking_status = "Delivered"
 				pickup_at = None
 				delivered_at = None
-				if len(response_data["tracking_data"].get("shipment_track_activities", [])):
+				if response_data["tracking_data"].get("shipment_track_activities", []):
 					for s in response_data["tracking_data"]["shipment_track_activities"]:
 						status = str(s["sr-status"])
 						if status == "42":
