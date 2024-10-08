@@ -138,10 +138,10 @@ class ShiprocketUtils():
 						pickup_response = make_post_request(pickup_url, headers=headers, data=json.dumps(pickup_payload))
 						if not 'pickup_status' in pickup_response:
 							frappe.throw(_('An Error occurred while creating pickup: {0}')
-								.format(response_data['message']))
-				elif 'message' in response_data:
+								.format(pickup_response['message']))
+				elif 'message' in awb_response:
 					frappe.throw(_('An Error occurred while generating AWB: {0}')
-						.format(response_data['message']))
+						.format(awb_response['message']))
 				return {
 					'service_provider': SHIPROCKET_PROVIDER,
 					'shipment_id': response_data['shipment_id'],
