@@ -54,6 +54,22 @@ def show_error_alert(action):
 	link_to_log = frappe.utils.get_link_to_form("Error Log", log.name, "See what happened.")
 	frappe.msgprint(_('An Error occurred while {0}. {1}').format(action, link_to_log), indicator='orange', alert=True)
 
+def throw_integration_error(exc, action):
+	"""Raise integration API errors so they propagate to the frontend."""
+	from requests.exceptions import HTTPError
+
+	if isinstance(exc, HTTPError) and exc.response is not None:
+		try:
+			error_data = exc.response.json()
+			if isinstance(error_data, dict) and error_data.get("message"):
+				frappe.throw(_("An Error occurred while {0}: {1}").format(action, error_data["message"]))
+		except Exception:
+			pass
+
+	log = frappe.log_error(frappe.get_traceback())
+	link_to_log = frappe.utils.get_link_to_form("Error Log", log.name, "See what happened.")
+	frappe.throw(_("An Error occurred while {0}. {1}").format(action, link_to_log))
+
 def get_lat_long(gps_object):
 	gps_object =json.loads(gps_object)
 	for feature in gps_object["features"]:

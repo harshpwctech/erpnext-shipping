@@ -9,7 +9,7 @@ from frappe.model.document import Document
 from frappe.utils import data
 from frappe.utils.data import add_days, flt, get_datetime, now_datetime, time_diff_in_seconds, format_datetime
 from frappe.utils.password import get_decrypted_password
-from erpnext_shipping.erpnext_shipping.utils import show_error_alert
+from erpnext_shipping.erpnext_shipping.utils import throw_integration_error
 
 SHIPROCKET_PROVIDER = 'Shiprocket'
 class Shiprocket(Document):pass
@@ -84,11 +84,8 @@ class ShiprocketUtils():
 				else:
 					frappe.throw(_('An Error occurred while fetching Shiprocket prices: {0}')
 						.format(response_data['message']))
-			else:
-				frappe.throw(_('An Error occurred while fetching Shiprocket prices: {0}')
-					.format(response_data['message']))
-		except Exception:
-			show_error_alert("fetching Shiprocket prices")
+		except Exception as exc:
+			throw_integration_error(exc, "fetching Shiprocket prices")
 
 		return []
 	
@@ -135,13 +132,7 @@ class ShiprocketUtils():
 						pickup_payload= {
 							"shipment_id": [response_data.get("shipment_id")]
 						}
-						pickup_response = make_post_request(pickup_url, headers=headers, data=json.dumps(pickup_payload))
-						if not 'pickup_status' in pickup_response:
-							frappe.throw(_('An Error occurred while creating pickup: {0}')
-								.format(pickup_response['message']))
-				elif 'message' in awb_response:
-					frappe.throw(_('An Error occurred while generating AWB: {0}')
-						.format(awb_response['message']))
+						make_post_request(pickup_url, headers=headers, data=json.dumps(pickup_payload))
 				return {
 					'service_provider': SHIPROCKET_PROVIDER,
 					'shipment_id': response_data['shipment_id'],
@@ -150,11 +141,8 @@ class ShiprocketUtils():
 					"shipment_amount": flt(service_info["total_price"], precision=0) if "total_price" in service_info else 0.00,
 					'awb_number': awb_number,
 				}
-			elif 'message' in response_data:
-				frappe.throw(_('An Error occurred while creating Shipment: {0}')
-					.format(response_data['message']))
-		except Exception:
-			show_error_alert("creating Shiprocket Shipment")
+		except Exception as exc:
+			throw_integration_error(exc, "creating Shiprocket Shipment")
 
 	def get_label(self, shipment_id):
 		url = self.base_url+"courier/generate/label"
@@ -173,11 +161,8 @@ class ShiprocketUtils():
 			)
 			if 'label_created' in response_data:
 				return response_data["label_url"]
-			elif 'message' in response_data:
-				frappe.throw(_('An Error occurred while generating lable: {0}')
-					.format(response_data['message']))
-		except Exception:
-			show_error_alert("generating Shiprocket lable")
+		except Exception as exc:
+			throw_integration_error(exc, "generating Shiprocket label")
 	
 	def get_manifest(self, shipment_ids):
 		url = self.base_url+"manifests/generate"
@@ -196,11 +181,8 @@ class ShiprocketUtils():
 			)
 			if 'manifest_url' in response_data:
 				return response_data["manifest_url"]
-			elif 'message' in response_data:
-				frappe.throw(_('An Error occurred while generating manifest: {0}')
-					.format(response_data['message']))
-		except Exception:
-			show_error_alert("generating Shiprocket manifest")
+		except Exception as exc:
+			throw_integration_error(exc, "generating Shiprocket manifest")
 
 	def get_tracking_data(self, shipment_id):
 		url = self.base_url+"courier/track/shipment/{0}".format(shipment_id)
@@ -236,8 +218,8 @@ class ShiprocketUtils():
 					'delivered_at': delivered_at
 				}
 		
-		except Exception:
-			show_error_alert("track shipment")
+		except Exception as exc:
+			throw_integration_error(exc, "tracking Shiprocket shipment")
 	
 	def get_shipment_details(self, shipment_id):
 		shipment_details_url = self.base_url+"shipments/{0}".format(shipment_id)
@@ -256,8 +238,8 @@ class ShiprocketUtils():
 				url=order_details_url,
 				headers=headers
 			)
-		except Exception:
-			show_error_alert("get shipment details")
+		except Exception as exc:
+			throw_integration_error(exc, "fetching Shiprocket shipment details")
 
 	def get_service_dict(self, response):
 		"""Returns a dictionary with service info."""
@@ -359,13 +341,10 @@ class ShiprocketUtils():
 				add_pickup_address_response = make_post_request(add_pickup_address_url, headers=headers, data=json.dumps(add_pickup_address_payload))
 				if 'success' in add_pickup_address_response:
 					return pickup_address.name[:36]
-				else:
-					frappe.throw(_('An Error occurred while adding pickup location: {0}')
-						.format(add_pickup_address_response['message']))
 			else:
 				return pickup_address.name[:36]
-		except Exception:
-			show_error_alert("getting pickup location")
+		except Exception as exc:
+			throw_integration_error(exc, "getting Shiprocket pickup location")
 
 def get_invoice_number(delivery_notes):
 	for dn in list(set(eval(delivery_notes))):
