@@ -268,7 +268,7 @@ class ShiprocketUtils():
 		order_items = self.get_order_items(delivery_notes)
 		payload = {
 			"order_id": shipment,
-			"order_date": format_datetime(get_datetime()),
+			"order_date": get_datetime().strftime("%Y-%m-%d %H:%M:%S"),
 			"pickup_location": self.get_pickup_location(pickup_address),
 			"billing_customer_name": delivery_contact.first_name,
 			"billing_last_name": delivery_contact.last_name if delivery_contact.last_name else "",
@@ -296,22 +296,28 @@ class ShiprocketUtils():
 		return payload
 	
 	def get_order_items(self, delivery_notes):
-		order_items = []
-		for dn in list(set(eval(delivery_notes))):
+		order_items = {}
+
+		for dn in set(eval(delivery_notes)):
 			delivery_note = frappe.get_doc("Delivery Note", dn)
+
 			for item in delivery_note.items:
+				sku = item.item_code[:50]
 				tax_rate = get_item_tax_amount_from_delivery_note(item.item_code, delivery_note)
-				order_item = {
-					"name": item.item_name,
-					"sku": item.item_code[:50],
-					"units": int(item.qty),
-					"selling_price": int(item.rate*(1+tax_rate/100)),
-					"tax": tax_rate,
-					"hsn": int(item.gst_hsn_code) if item.gst_hsn_code else ""
-				}
-				order_items.append(order_item)
-		
-		return order_items
+
+				if sku in order_items:
+					order_items[sku]["units"] += int(item.qty)
+				else:
+					order_items[sku] = {
+						"name": item.item_name,
+						"sku": sku,
+						"units": int(item.qty),
+						"selling_price": int(item.rate * (1 + tax_rate / 100)),
+						"tax": tax_rate,
+						"hsn": int(item.gst_hsn_code) if item.gst_hsn_code else ""
+					}
+
+		return list(order_items.values())
 	
 	def get_pickup_location(self, pickup_address):
 		get_pickup_address_url = self.base_url+"settings/company/pickup"
