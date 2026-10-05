@@ -79,11 +79,12 @@ class ShiprocketUtils():
 					for response in response_data["data"]["available_courier_companies"]:
 						available_service = self.get_service_dict(response)
 						available_services.append(available_service)
-
 					return available_services
 				else:
-					frappe.throw(_('An Error occurred while fetching Shiprocket prices: {0}')
-						.format(response_data['message']))
+					frappe.throw(_('No available services found for the given pincode'))
+			else:
+				frappe.throw(_('An Error occurred while fetching Shiprocket prices: {0}')
+					.format(response_data['message']))
 		except Exception as exc:
 			throw_integration_error(exc, "fetching Shiprocket prices")
 
