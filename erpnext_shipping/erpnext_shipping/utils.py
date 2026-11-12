@@ -55,20 +55,68 @@ def show_error_alert(action):
 	frappe.msgprint(_('An Error occurred while {0}. {1}').format(action, link_to_log), indicator='orange', alert=True)
 
 def throw_integration_error(exc, action):
-	"""Raise integration API errors so they propagate to the frontend."""
+	"""
+	Log an integration API error and raise it to the frontend.
+
+	The provider's response body goes into the Error Log, so the real
+	reason for a failure can be read later.
+
+	Parameters:
+		exc (Exception, required): The exception raised by the API call.
+		action (str, required): What was being done, e.g. "creating Shiprocket Shipment".
+
+	Returns:
+		None: Always throws.
+	"""
+	response_body = get_error_response_body(exc)
+
+	log_message = frappe.get_traceback()
+	if response_body:
+		log_message += "\nResponse body:\n" + response_body[:5000]
+	log = frappe.log_error(title=_("Error while {0}").format(action), message=log_message)
+
+	api_message = get_api_error_message(response_body)
+	if api_message:
+		frappe.throw(_("An Error occurred while {0}: {1}").format(action, api_message))
+
+	link_to_log = frappe.utils.get_link_to_form("Error Log", log.name, "See what happened.")
+	frappe.throw(_("An Error occurred while {0}. {1}").format(action, link_to_log))
+
+def get_error_response_body(exc):
+	"""
+	Return the response text carried by an HTTP error.
+
+	Parameters:
+		exc (Exception, required): The exception raised by the API call.
+
+	Returns:
+		str: The response body, or "" when the exception has none.
+	"""
 	from requests.exceptions import HTTPError
 
 	if isinstance(exc, HTTPError) and exc.response is not None:
-		try:
-			error_data = exc.response.json()
-			if isinstance(error_data, dict) and error_data.get("message"):
-				frappe.throw(_("An Error occurred while {0}: {1}").format(action, error_data["message"]))
-		except Exception:
-			pass
+		return exc.response.text or ""
+	return ""
 
-	log = frappe.log_error(frappe.get_traceback())
-	link_to_log = frappe.utils.get_link_to_form("Error Log", log.name, "See what happened.")
-	frappe.throw(_("An Error occurred while {0}. {1}").format(action, link_to_log))
+def get_api_error_message(response_body):
+	"""
+	Extract the "message" field from a JSON error response.
+
+	Parameters:
+		response_body (str, required): Raw response text from the provider.
+
+	Returns:
+		str | None: The provider's message, or None when the body is
+		not JSON or has no message.
+	"""
+	try:
+		error_data = json.loads(response_body)
+	except ValueError:
+		return None
+
+	if isinstance(error_data, dict) and error_data.get("message"):
+		return str(error_data["message"])
+	return None
 
 def get_lat_long(gps_object):
 	gps_object =json.loads(gps_object)
