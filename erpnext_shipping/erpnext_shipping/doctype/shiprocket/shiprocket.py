@@ -4,15 +4,24 @@
 import frappe
 import json
 from frappe import _, log_error
-from frappe.integrations.utils import make_get_request, make_post_request
+from frappe.integrations.utils import make_request
 from frappe.model.document import Document
-from frappe.utils import data
-from frappe.utils.data import add_days, flt, get_datetime, now_datetime, time_diff_in_seconds, format_datetime
+from frappe.utils.data import flt, get_datetime
 from frappe.utils.password import get_decrypted_password
+from erpnext_shipping.erpnext_shipping.doctype.shiprocket.shiprocket_auth import (
+	get_auth_token,
+	is_unauthorized,
+	reset_token_on_credential_change,
+)
 from erpnext_shipping.erpnext_shipping.utils import throw_integration_error
 
 SHIPROCKET_PROVIDER = 'Shiprocket'
-class Shiprocket(Document):pass
+class Shiprocket(Document):
+	"""Settings for the Shiprocket integration."""
+
+	def validate(self):
+		"""Drop the stored token when the API credentials change."""
+		reset_token_on_credential_change(self)
 
 class ShiprocketUtils():
 	def __init__(self):
@@ -23,44 +32,51 @@ class ShiprocketUtils():
 		if not self.enabled:
 			link = frappe.utils.get_link_to_form('Shiprocket', 'Shiprocket', frappe.bold('Shiprocket Settings'))
 			frappe.throw(_('Please enable Shiprocket Integration in {0}'.format(link)), title=_('Mandatory'))
-		self.check_auth_token()
-		
-	def check_auth_token(self):
-		shiprocket_settings = frappe.get_doc("Shiprocket")
-		if shiprocket_settings.valid_upto:
-			if time_diff_in_seconds(shiprocket_settings.valid_upto, now_datetime()) < 150.0:
-				self.token = self.fetch_auth_token(shiprocket_settings)
-			else:
-				self.token = shiprocket_settings.token
-		else:
-			self.token = self.fetch_auth_token(shiprocket_settings)
-	
-	def fetch_auth_token(self, shiprocket_settings):
-		url = self.base_url+"auth/login"
-		headers = {
-			"Content-Type": "application/json"
+		self.token = get_auth_token()
+
+	def request(self, method, endpoint, payload=None):
+		"""
+		Call a Shiprocket API with the auth token.
+
+		Shiprocket can reject a token before its stored expiry. On a 401
+		the method logs in again and repeats the call once.
+
+		Parameters:
+			method (str, required): HTTP method, "GET" or "POST".
+			endpoint (str, required): Path after the base URL, e.g. "orders/create/adhoc".
+			payload (dict, optional): Request body, sent as JSON.
+
+		Returns:
+			dict | str | None: The parsed Shiprocket response.
+		"""
+		url = self.base_url + endpoint
+		data = json.dumps(payload) if payload is not None else None
+
+		try:
+			return make_request(method, url, headers=self.get_headers(), data=data)
+		except Exception as exc:
+			if not is_unauthorized(exc):
+				raise
+
+		self.token = get_auth_token(force_refresh=True)
+		return make_request(method, url, headers=self.get_headers(), data=data)
+
+	def get_headers(self):
+		"""
+		Build the request headers for the current token.
+
+		Returns:
+			dict: JSON content type and the bearer Authorization header.
+		"""
+		return {
+			"Content-Type": "application/json",
+			"Authorization": "Bearer {0}".format(self.token)
 		}
-		data = {
-			"email": self.api_id,
-			"password": self.api_password
-		}
-		token_response = make_post_request(url, headers=headers, data=json.dumps(data))
-		token = token_response.get("token")
-		shiprocket_settings.token = token
-		shiprocket_settings.valid_upto = add_days(now_datetime(), 10)
-		shiprocket_settings.save(ignore_permissions=True)
-		frappe.db.commit()
-		return token
 
 	def get_available_services(self, pickup_pincode, delivery_pincode, weight, cod=False):
 		if not self.enabled or not self.api_id or not self.api_password:
 			frappe.throw(_('Please enable Shiprocket Integration'), title=_('Mandatory'))
 
-		url = self.base_url+"courier/serviceability/"
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 		payload = dict(
 			pickup_postcode = pickup_pincode,
 			delivery_postcode = delivery_pincode,
@@ -69,11 +85,7 @@ class ShiprocketUtils():
 		)
 		try:
 			available_services = []
-			response_data = make_get_request(
-				url=url,
-				headers=headers,
-				data=json.dumps(payload)
-			)
+			response_data = self.request("GET", "courier/serviceability/", payload)
 			if 'data' in response_data and "available_courier_companies" in response_data["data"]:
 				if len(response_data["data"]["available_courier_companies"]):
 					for response in response_data["data"]["available_courier_companies"]:
@@ -96,10 +108,6 @@ class ShiprocketUtils():
 			return []
 
 		parcel_list = self.get_parcel_list(json.loads(shipment_parcel))
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 
 		payload = self.generate_payload(
 			shipment=shipment,
@@ -110,30 +118,23 @@ class ShiprocketUtils():
 			delivery_notes=delivery_notes,
 			cod=cod,
 			service_info=service_info)
-		url = self.base_url+"orders/create/adhoc"
 		try:
-			response_data = make_post_request(
-				url=url,
-				headers=headers,
-				data=json.dumps(payload)
-			)
+			response_data = self.request("POST", "orders/create/adhoc", payload)
 			if 'shipment_id' in response_data:
 				awb_number = ''
-				awb_url = self.base_url+"courier/assign/awb"
 				awb_payload= {
 					"shipment_id": response_data["shipment_id"]
 				}
 				if service_info.get("id", None):
 					awb_payload["courier_id"] = str(service_info.get("id"))
-				awb_response = make_post_request(awb_url, headers=headers, data=json.dumps(awb_payload))
+				awb_response = self.request("POST", "courier/assign/awb", awb_payload)
 				if 'awb_assign_status' in awb_response:
 					if awb_response["awb_assign_status"] == 1:
 						awb_number = awb_response['response']['data']['awb_code']
-						pickup_url = self.base_url+"courier/generate/pickup"
 						pickup_payload= {
 							"shipment_id": [response_data.get("shipment_id")]
 						}
-						make_post_request(pickup_url, headers=headers, data=json.dumps(pickup_payload))
+						self.request("POST", "courier/generate/pickup", pickup_payload)
 				return {
 					'service_provider': SHIPROCKET_PROVIDER,
 					'shipment_id': response_data['shipment_id'],
@@ -146,56 +147,30 @@ class ShiprocketUtils():
 			throw_integration_error(exc, "creating Shiprocket Shipment")
 
 	def get_label(self, shipment_id):
-		url = self.base_url+"courier/generate/label"
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 		payload = {
 			"shipment_id": [shipment_id]
 		}
 		try:
-			response_data = make_post_request(
-				url=url,
-				headers=headers,
-				data=json.dumps(payload)
-			)
+			response_data = self.request("POST", "courier/generate/label", payload)
 			if 'label_created' in response_data:
 				return response_data["label_url"]
 		except Exception as exc:
 			throw_integration_error(exc, "generating Shiprocket label")
 	
 	def get_manifest(self, shipment_ids):
-		url = self.base_url+"manifests/generate"
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 		payload = {
 			"shipment_id": shipment_ids
 		}
 		try:
-			response_data = make_post_request(
-				url=url,
-				headers=headers,
-				data=json.dumps(payload)
-			)
+			response_data = self.request("POST", "manifests/generate", payload)
 			if 'manifest_url' in response_data:
 				return response_data["manifest_url"]
 		except Exception as exc:
 			throw_integration_error(exc, "generating Shiprocket manifest")
 
 	def get_tracking_data(self, shipment_id):
-		url = self.base_url+"courier/track/shipment/{0}".format(shipment_id)
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 		try:
-			response_data = make_get_request(
-				url=url,
-				headers=headers
-			)
+			response_data = self.request("GET", "courier/track/shipment/{0}".format(shipment_id))
 			if "tracking_data" in response_data:
 				tracking_status = "In Progress"
 				if response_data["tracking_data"]["shipment_track"][0]["current_status"] == "Delivered":
@@ -223,22 +198,10 @@ class ShiprocketUtils():
 			throw_integration_error(exc, "tracking Shiprocket shipment")
 	
 	def get_shipment_details(self, shipment_id):
-		shipment_details_url = self.base_url+"shipments/{0}".format(shipment_id)
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 		try:
-			response_data = make_get_request(
-				url=shipment_details_url,
-				headers=headers
-			)
+			response_data = self.request("GET", "shipments/{0}".format(shipment_id))
 			order_id = response_data["data"]["order_id"]
-			order_details_url = self.base_url+"orders/show/{0}".format(order_id)
-			return make_get_request(
-				url=order_details_url,
-				headers=headers
-			)
+			return self.request("GET", "orders/show/{0}".format(order_id))
 		except Exception as exc:
 			throw_integration_error(exc, "fetching Shiprocket shipment details")
 
@@ -321,18 +284,9 @@ class ShiprocketUtils():
 		return list(order_items.values())
 	
 	def get_pickup_location(self, pickup_address):
-		get_pickup_address_url = self.base_url+"settings/company/pickup"
-		headers = {
-			"Content-Type": "application/json",
-			"Authorization": "Bearer {0}".format(self.token)
-		}
 		try:
-			response_data = make_get_request(
-				url=get_pickup_address_url,
-				headers=headers
-			)
+			response_data = self.request("GET", "settings/company/pickup")
 			if not any(pickup_location["pickup_location"] == pickup_address.name[:36] for pickup_location in response_data["data"]["shipping_address"]):
-				add_pickup_address_url = self.base_url+"settings/company/addpickup"
 				add_pickup_address_payload= {
 					"pickup_location": pickup_address.name[:36],
 					"name": response_data["data"]["shipping_address"][0]["name"],
@@ -345,7 +299,7 @@ class ShiprocketUtils():
 					"country": pickup_address.country,
 					"pin_code": pickup_address.pincode
 				}
-				add_pickup_address_response = make_post_request(add_pickup_address_url, headers=headers, data=json.dumps(add_pickup_address_payload))
+				add_pickup_address_response = self.request("POST", "settings/company/addpickup", add_pickup_address_payload)
 				if 'success' in add_pickup_address_response:
 					return pickup_address.name[:36]
 			else:
